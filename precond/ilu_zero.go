@@ -91,6 +91,9 @@ func emptyDOK(N int) map[int]map[int]float64 {
 	return dok
 }
 
+// ILUZero calculates the incomplete LU decomposition of the matrix A
+// If A is dense, this is the same as the complete LU decomposition
+// The method panics if A is not square or the diagonal contains zeros
 func ILUZero(A ZeroAwareMatrix) ILUPreconditioner {
 	nrows, ncols := A.Dims()
 	if nrows != ncols {
