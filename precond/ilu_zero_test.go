@@ -108,29 +108,35 @@ func randomTestCase(dim int) testCase {
 func TestSelfConsistency(t *testing.T) {
 	t.Parallel()
 
-	for _, dim := range []int{5, 10, 15, 20, 25} {
-		tc := randomTestCase(dim)
-		zeroAware := &DenseNonZeroDoer{mat.NewDense(dim, dim, nil)}
-		zeroAware.CloneFrom(tc.matrix)
+	for _, trans := range []bool{true, false} {
+		for _, dim := range []int{5, 10, 15, 20, 25} {
+			tc := randomTestCase(dim)
+			zeroAware := &DenseNonZeroDoer{mat.NewDense(dim, dim, nil)}
+			zeroAware.CloneFrom(tc.matrix)
 
-		splu := ILUZero(zeroAware)
-		result := mat.NewVecDense(dim, nil)
-		if err := splu.SolveVecTo(result, false, tc.rhs); err != nil {
-			t.Errorf("%v\n", err)
-			return
-		}
-
-		want := mat.NewVecDense(dim, nil)
-		want.MulVec(tc.matrix, result)
-
-		tol := 1e-6
-		for i := 0; i < dim; i++ {
-			if diff := math.Abs(want.AtVec(i) - tc.rhs.AtVec(i)); diff > tol {
-				t.Errorf("Wanted:\n%v\ngot\n%v\n", want, result)
+			splu := ILUZero(zeroAware)
+			result := mat.NewVecDense(dim, nil)
+			if err := splu.SolveVecTo(result, trans, tc.rhs); err != nil {
+				t.Errorf("%v\n", err)
 				return
 			}
-		}
 
+			want := mat.NewVecDense(dim, nil)
+			if trans {
+				want.MulVec(tc.matrix.T(), result)
+			} else {
+				want.MulVec(tc.matrix, result)
+			}
+
+			tol := 1e-6
+			for i := 0; i < dim; i++ {
+				if diff := math.Abs(want.AtVec(i) - tc.rhs.AtVec(i)); diff > tol {
+					t.Errorf("Dim: %d, trans: %v, Wanted:\n%v\ngot\n%v\n", dim, trans, want, result)
+					return
+				}
+			}
+
+		}
 	}
 }
 
