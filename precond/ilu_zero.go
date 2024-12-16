@@ -1,7 +1,6 @@
 package precond
 
 import (
-	"errors"
 	"fmt"
 	"math"
 
@@ -15,8 +14,31 @@ type ZeroAwareMatrix interface {
 }
 
 type ILUPreconditioner struct {
-	lower *sparse.CSR
-	upper *sparse.CSR
+	lower  *sparse.CSR
+	upper  *sparse.CSR
+	lowerT *sparse.CSR
+	upperT *sparse.CSR
+}
+
+func (ilu *ILUPreconditioner) initT() {
+	if ilu.lowerT != nil && ilu.upperT != nil {
+		// Already initialized
+		return
+	}
+
+	r, c := ilu.lower.Dims()
+	lowerTDOK := sparse.NewDOK(r, c)
+	ilu.lower.DoNonZero(func(i, j int, v float64) {
+		lowerTDOK.Set(j, i, v)
+	})
+
+	upperTDOK := sparse.NewDOK(r, c)
+	ilu.upper.DoNonZero(func(i, j int, v float64) {
+		upperTDOK.Set(j, i, v)
+	})
+
+	ilu.lowerT = lowerTDOK.ToCSR()
+	ilu.upperT = upperTDOK.ToCSR()
 }
 
 func (ilu *ILUPreconditioner) checkDimensions(dst *mat.VecDense, rhs mat.Vector) error {
@@ -37,40 +59,46 @@ func (ilu *ILUPreconditioner) SolveVecTo(dst *mat.VecDense, trans bool, rhs mat.
 		return err
 	}
 
-	if trans {
-		return errors.New("transpose is currently not supported")
-	}
 	n, _ := dst.Dims()
 	tmpSolution := mat.NewVecDense(n, nil)
-	ilu.forwardSubstition(tmpSolution, rhs)
-	ilu.backwardSubstitiion(dst, tmpSolution)
+
+	if trans {
+		// Initialize the transposed matrices on request
+		ilu.initT()
+		forwardSubstition(ilu.upperT, tmpSolution, rhs)
+		backwardSubstitiion(ilu.lowerT, dst, tmpSolution)
+	} else {
+		forwardSubstition(ilu.lower, tmpSolution, rhs)
+		backwardSubstitiion(ilu.upper, dst, tmpSolution)
+	}
+
 	return nil
 }
 
-func (ilu *ILUPreconditioner) forwardSubstition(dst *mat.VecDense, rhs mat.Vector) {
+func forwardSubstition(lower *sparse.CSR, dst *mat.VecDense, rhs mat.Vector) {
 	n, _ := rhs.Dims()
 	for i := 0; i < n; i++ {
 		sum := 0.0
-		ilu.lower.DoRowNonZero(i, func(i, j int, v float64) {
+		lower.DoRowNonZero(i, func(i, j int, v float64) {
 			if j < i {
 				sum += v * dst.AtVec(j)
 			}
 		})
-		dst.SetVec(i, (rhs.AtVec(i)-sum)/ilu.lower.At(i, i))
+		dst.SetVec(i, (rhs.AtVec(i)-sum)/lower.At(i, i))
 	}
 }
 
-func (ilu *ILUPreconditioner) backwardSubstitiion(dst *mat.VecDense, rhs mat.Vector) {
+func backwardSubstitiion(upper *sparse.CSR, dst *mat.VecDense, rhs mat.Vector) {
 	n, _ := rhs.Dims()
 	for i := n - 1; i >= 0; i-- {
 		sum := 0.0
-		ilu.upper.DoRowNonZero(i, func(i, j int, v float64) {
+		upper.DoRowNonZero(i, func(i, j int, v float64) {
 			if j > i {
 				sum += v * dst.AtVec(j)
 			}
 		})
 
-		dst.SetVec(i, (rhs.AtVec(i)-sum)/ilu.upper.At(i, i))
+		dst.SetVec(i, (rhs.AtVec(i)-sum)/upper.At(i, i))
 	}
 }
 
