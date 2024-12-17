@@ -26,19 +26,8 @@ func (ilu *ILUPreconditioner) initT() {
 		return
 	}
 
-	r, c := ilu.lower.Dims()
-	lowerTDOK := sparse.NewDOK(r, c)
-	ilu.lower.DoNonZero(func(i, j int, v float64) {
-		lowerTDOK.Set(j, i, v)
-	})
-
-	upperTDOK := sparse.NewDOK(r, c)
-	ilu.upper.DoNonZero(func(i, j int, v float64) {
-		upperTDOK.Set(j, i, v)
-	})
-
-	ilu.lowerT = lowerTDOK.ToCSR()
-	ilu.upperT = upperTDOK.ToCSR()
+	ilu.lowerT = transposeCSR(ilu.lower)
+	ilu.upperT = transposeCSR(ilu.upper)
 }
 
 func (ilu *ILUPreconditioner) checkDimensions(dst *mat.VecDense, rhs mat.Vector) error {
