@@ -8,3 +8,5 @@ require (
 )
 
 require github.com/james-bowman/sparse v0.0.0-20210729090128-1e6c7dd483e9
+
+require gonum.org/v1/exp v0.0.0-20240904063054-c154cd8162a7
