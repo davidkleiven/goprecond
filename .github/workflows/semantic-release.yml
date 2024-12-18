@@ -28,10 +28,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  outputs:
-    release_created: ${{ steps.semantic.create_release.outputs.new_release_published }}
-    new_tag: $${{ steps.semantic.create_release.outputs.new_release_git_tag }}
-    release_notes: ${{ steps.semantic.create_release.outputs.new_release_notes }}
+    outputs:
+      release_created: ${{ steps.semantic.create_release.outputs.new_release_published }}
+      new_tag: $${{ steps.semantic.create_release.outputs.new_release_git_tag }}
+      release_notes: ${{ steps.semantic.create_release.outputs.new_release_notes }}
   
   publish-release:
     needs: semantic-release
