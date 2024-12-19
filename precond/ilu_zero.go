@@ -91,10 +91,10 @@ func backwardSubstitiion(upper *sparse.CSR, dst *mat.VecDense, rhs mat.Vector) {
 	}
 }
 
-func checkDiag(lu map[int]map[int]float64, N int) {
+func checkDiag(lu map[int]map[int]float64, N int, requirePositive bool) {
 	tol := 1e-8
 	for i := 0; i < N; i++ {
-		if diag, ok := lu[i][i]; !ok || math.Abs(diag) < tol {
+		if diag, ok := lu[i][i]; !ok || math.Abs(diag) < tol || (diag < tol && requirePositive) {
 			panic("Zero on diagonal")
 		}
 	}
@@ -123,7 +123,7 @@ func ILUZero(A ZeroAwareMatrix) ILUPreconditioner {
 	A.DoNonZero(func(i, j int, v float64) {
 		lu[i][j] = v
 	})
-	checkDiag(lu, nrows)
+	checkDiag(lu, nrows, false)
 
 	for i := 0; i < nrows; i++ {
 		diag := lu[i][i]
