@@ -2,6 +2,9 @@
 
 Package implementing common spare preconditioners
 
+* Incomplete LU
+* Incomplete Cholesky
+
 ## Installation
 
 ```bash
