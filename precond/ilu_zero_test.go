@@ -21,6 +21,20 @@ func (d *DenseNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
 	}
 }
 
+func (d *DenseNonZeroDoer) DoRowNonZero(row int, fn func(i, j int, v float64)) {
+	_, ncols := d.Dims()
+	for j := 0; j < ncols; j++ {
+		fn(row, j, d.At(row, j))
+	}
+}
+
+func (d *DenseNonZeroDoer) DoColNonZero(col int, fn func(i, j int, v float64)) {
+	nrows, _ := d.Dims()
+	for i := 0; i < nrows; i++ {
+		fn(i, col, d.At(i, col))
+	}
+}
+
 func TestKnownDecompositions(t *testing.T) {
 
 	for testNum, test := range []struct {
