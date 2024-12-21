@@ -32,9 +32,9 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: comnoco/create-release@v2
         env:
-          GITHUB_TOKEN: ${{ inputs.token }}
+          GITHUB_TOKEN: ${{ secrets.token }}
         with:
           tag_name: ${{ inputs.tag }}
           release_name: Release ${{ inputs.tag }}
