@@ -16,7 +16,9 @@ func (d *DenseNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
 	nrows, ncols := d.Dims()
 	for row := 0; row < nrows; row++ {
 		for col := 0; col < ncols; col++ {
-			fn(row, col, d.At(row, col))
+			if v := d.At(row, col); v != 0.0 {
+				fn(row, col, v)
+			}
 		}
 	}
 }
@@ -24,14 +26,18 @@ func (d *DenseNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
 func (d *DenseNonZeroDoer) DoRowNonZero(row int, fn func(i, j int, v float64)) {
 	_, ncols := d.Dims()
 	for j := 0; j < ncols; j++ {
-		fn(row, j, d.At(row, j))
+		if v := d.At(row, j); v != 0.0 {
+			fn(row, j, v)
+		}
 	}
 }
 
 func (d *DenseNonZeroDoer) DoColNonZero(col int, fn func(i, j int, v float64)) {
 	nrows, _ := d.Dims()
 	for i := 0; i < nrows; i++ {
-		fn(i, col, d.At(i, col))
+		if v := d.At(i, col); v != 0.0 {
+			fn(i, col, v)
+		}
 	}
 }
 
