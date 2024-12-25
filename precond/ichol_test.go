@@ -5,6 +5,7 @@ import (
 
 	"testing"
 
+	"github.com/davidkleiven/goprecond/precond/precondtest"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -23,7 +24,7 @@ func TestICholSolution(t *testing.T) {
 
 	for testNum, n := range []int{5, 10, 15, 20} {
 		c := randomSymmetricTestCase(n)
-		ichol := IChol(&DenseNonZeroDoer{c.matrix})
+		ichol := IChol(&precondtest.DenseNonZeroDoer{Dense: c.matrix})
 		icholResultvec := mat.NewVecDense(n, nil)
 		ichoTResultVec := mat.NewVecDense(n, nil)
 		dotProduct := mat.NewVecDense(n, nil)

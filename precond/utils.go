@@ -1,6 +1,8 @@
 package precond
 
-import "github.com/james-bowman/sparse"
+import (
+	"github.com/james-bowman/sparse"
+)
 
 func transposeCSR(matrix *sparse.CSR) *sparse.CSR {
 	r, c := matrix.Dims()
