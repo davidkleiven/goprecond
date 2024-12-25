@@ -4,42 +4,10 @@ import (
 	"math"
 	"testing"
 
+	"github.com/davidkleiven/goprecond/precond/precondtest"
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
 )
-
-type DenseNonZeroDoer struct {
-	*mat.Dense
-}
-
-func (d *DenseNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
-	nrows, ncols := d.Dims()
-	for row := 0; row < nrows; row++ {
-		for col := 0; col < ncols; col++ {
-			if v := d.At(row, col); v != 0.0 {
-				fn(row, col, v)
-			}
-		}
-	}
-}
-
-func (d *DenseNonZeroDoer) DoRowNonZero(row int, fn func(i, j int, v float64)) {
-	_, ncols := d.Dims()
-	for j := 0; j < ncols; j++ {
-		if v := d.At(row, j); v != 0.0 {
-			fn(row, j, v)
-		}
-	}
-}
-
-func (d *DenseNonZeroDoer) DoColNonZero(col int, fn func(i, j int, v float64)) {
-	nrows, _ := d.Dims()
-	for i := 0; i < nrows; i++ {
-		if v := d.At(i, col); v != 0.0 {
-			fn(i, col, v)
-		}
-	}
-}
 
 func TestKnownDecompositions(t *testing.T) {
 
@@ -59,7 +27,7 @@ func TestKnownDecompositions(t *testing.T) {
 			wantU:  mat.NewDense(3, 3, []float64{1.0, 2.0, 3.0, 0.0, -3.0, -6.0, 0.0, 0.0, 0.0}),
 		},
 	} {
-		zeroAware := &DenseNonZeroDoer{test.matrix}
+		zeroAware := &precondtest.DenseNonZeroDoer{Dense: test.matrix}
 		lu := ILUZero(zeroAware)
 
 		tol := 1e-6
@@ -87,7 +55,7 @@ func TestKnownDecompositions(t *testing.T) {
 }
 
 func Test_Solve2x2(t *testing.T) {
-	matrix := DenseNonZeroDoer{mat.NewDense(2, 2, []float64{1.0, 2.0, 3.0, 4.0})}
+	matrix := precondtest.DenseNonZeroDoer{Dense: mat.NewDense(2, 2, []float64{1.0, 2.0, 3.0, 4.0})}
 	lu := ILUZero(&matrix)
 	rhs := mat.NewVecDense(2, []float64{1.0, 1.0})
 	want := mat.NewVecDense(2, []float64{-1.0, 1.0})
@@ -131,7 +99,7 @@ func TestSelfConsistency(t *testing.T) {
 	for _, trans := range []bool{true, false} {
 		for _, dim := range []int{5, 10, 15, 20, 25} {
 			tc := randomTestCase(dim)
-			zeroAware := &DenseNonZeroDoer{mat.NewDense(dim, dim, nil)}
+			zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
 			zeroAware.CloneFrom(tc.matrix)
 
 			splu := ILUZero(zeroAware)
@@ -166,7 +134,7 @@ func TestRandomMatricesAgainstGonum(t *testing.T) {
 	for _, dim := range []int{5, 10, 15, 20} {
 		tc := randomTestCase(dim)
 
-		zeroAware := &DenseNonZeroDoer{mat.NewDense(dim, dim, nil)}
+		zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
 		zeroAware.CloneFrom(tc.matrix)
 
 		var lu mat.LU

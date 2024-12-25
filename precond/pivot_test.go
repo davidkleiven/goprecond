@@ -7,6 +7,7 @@ import (
 	"testing"
 	"testing/quick"
 
+	"github.com/davidkleiven/goprecond/precond/precondtest"
 	"github.com/davidkleiven/goprecond/precond/property"
 	"gonum.org/v1/gonum/mat"
 )
@@ -111,22 +112,22 @@ func TestPivoting(t *testing.T) {
 
 func TestPartialPivot(t *testing.T) {
 	for _, test := range []struct {
-		matrix DenseNonZeroDoer
+		matrix precondtest.DenseNonZeroDoer
 		want   []int
 		desc   string
 	}{
 		{
-			matrix: DenseNonZeroDoer{mat.NewDense(2, 2, []float64{1.0, 2.0, 3.0, 4.0})},
+			matrix: precondtest.DenseNonZeroDoer{Dense: mat.NewDense(2, 2, []float64{1.0, 2.0, 3.0, 4.0})},
 			want:   []int{1, 0},
 			desc:   "Simple 2x2 matrix",
 		},
 		{
-			matrix: DenseNonZeroDoer{mat.NewDense(2, 2, []float64{3.0, 4.0, 1.0, 2.0})},
+			matrix: precondtest.DenseNonZeroDoer{Dense: mat.NewDense(2, 2, []float64{3.0, 4.0, 1.0, 2.0})},
 			want:   []int{0, 1},
 			desc:   "Simple 2x2 matrix already ordered",
 		},
 		{
-			matrix: DenseNonZeroDoer{mat.NewDense(2, 2, []float64{1.0, 2.0, -3.0, -4.0})},
+			matrix: precondtest.DenseNonZeroDoer{Dense: mat.NewDense(2, 2, []float64{1.0, 2.0, -3.0, -4.0})},
 			want:   []int{1, 0},
 			desc:   "Simple 2x2 matrix with negative numbers",
 		},
@@ -147,7 +148,7 @@ func TestPivotingDiagonalIsDescending(t *testing.T) {
 
 	diagonalIsDesc := func(gen property.DenseSquareMatrixGenerator) bool {
 		nrows, ncols := gen.Matrix.Dims()
-		denseDoer := DenseNonZeroDoer{gen.Matrix}
+		denseDoer := precondtest.DenseNonZeroDoer{gen.Matrix}
 		pivot := PartialPivotMatrix(&denseDoer, nrows)
 
 		// Apply pivot and confirm that diagonal is descending in absolute value
