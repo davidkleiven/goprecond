@@ -66,10 +66,18 @@ func AdjacencyList(mat mat.NonZeroDoer) [][]int {
 }
 
 type AmdCtx struct {
-	Degrees    []int
+	// Degree of all nodes
+	Degrees []int
+
+	// If true, then the node has been eliminated
 	Eliminated []bool
-	Ordering   []int
-	Heap       *MinHeap
+
+	// Row ordering. This gradually grows during the AMD process
+	Ordering []int
+
+	// Heap is a structure that keeps track of the nodes which is makes
+	// the process of finding the node with the minimum degree efficient
+	Heap *MinHeap
 }
 
 func NewAmdCtx(n int) AmdCtx {
