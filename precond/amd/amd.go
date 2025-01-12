@@ -128,6 +128,7 @@ func (s *SimpleNodeDegree) Degree(node int, adjList [][]int, ctx *AmdCtx) int {
 func (s *SimpleNodeDegree) OnNodeEliminated(eliminated Node, adjList [][]int, ctx *AmdCtx) {}
 
 // Function to find the minimum degree ordering
+// This currently an experimental function that is under development
 func ApproximateMinimumDegree(n int, adjList [][]int, degCalc NodeDegree) []int {
 	if degCalc == nil {
 		degCalc = &SimpleNodeDegree{}
