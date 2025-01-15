@@ -1,8 +1,6 @@
 package amd
 
 import (
-	"container/heap"
-
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -74,18 +72,31 @@ type AmdCtx struct {
 
 	// Row ordering. This gradually grows during the AMD process
 	Ordering []int
+}
 
-	// Heap is a structure that keeps track of the nodes which is makes
-	// the process of finding the node with the minimum degree efficient
-	Heap *MinHeap
+func (ctx *AmdCtx) MinimumActiveDegree() Node {
+	isFirst := true
+	minimumDeg := 0
+	minumNode := 0
+	for i := range ctx.Degrees {
+		if !ctx.Eliminated[i] {
+			if ctx.Degrees[i] < minimumDeg || isFirst {
+				isFirst = false
+				minimumDeg = ctx.Degrees[i]
+				minumNode = i
+			}
+		}
+	}
+
+	if isFirst {
+		panic("No active elements")
+	}
+	return Node{degree: minimumDeg, index: minumNode}
 }
 
 func NewAmdCtx(n int) AmdCtx {
-	hp := &MinHeap{}
-	heap.Init(hp)
 	return AmdCtx{
 		Degrees:    make([]int, n),
-		Heap:       hp,
 		Eliminated: make([]bool, n),
 		Ordering:   make([]int, 0, n),
 	}
@@ -138,25 +149,17 @@ func ApproximateMinimumDegree(n int, adjList [][]int, degCalc NodeDegree) []int 
 		ctx.Degrees[i] = degCalc.Degree(i, adjList, &ctx)
 	}
 
-	for i, d := range ctx.Degrees {
-		heap.Push(ctx.Heap, Node{degree: d, index: i})
-	}
-
-	for ctx.Heap.Len() > 0 {
-		node := heap.Pop(ctx.Heap).(Node)
-		if ctx.Eliminated[node.index] {
-			continue
-		}
+	for i := 0; i < n; i++ {
+		node := ctx.MinimumActiveDegree()
 		ctx.Ordering = append(ctx.Ordering, node.index)
 		ctx.Eliminated[node.index] = true
 		degCalc.OnNodeEliminated(node, adjList, &ctx)
 
-		for _, neighbor := range degCalc.UpdateNodes(node, adjList, &ctx) {
+		for _, neighbor := range adjList[node.index] {
 			if ctx.Eliminated[neighbor] {
 				continue
 			}
 			ctx.Degrees[neighbor] = degCalc.Degree(neighbor, adjList, &ctx)
-			heap.Push(ctx.Heap, Node{degree: ctx.Degrees[neighbor], index: neighbor})
 		}
 	}
 	return ctx.Ordering

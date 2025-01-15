@@ -105,7 +105,7 @@ func TestAmdOrdering(t *testing.T) {
 
 	adjList := AdjacencyList(&precondtest.DenseNonZeroDoer{Dense: matrix})
 	order := ApproximateMinimumDegree(4, adjList, nil)
-	want := []int{1, 2, 3, 0}
+	want := []int{1, 2, 0, 3}
 
 	if !slices.Equal(want, order) {
 		t.Errorf("Wanted\n%v\ngot\n%v\n", want, order)
