@@ -103,10 +103,6 @@ func NewAmdCtx(n int) AmdCtx {
 }
 
 type NodeDegree interface {
-	// UpdateNodes returns a list of nodes for which the degree should be
-	// updated
-	UpdateNodes(eliminated Node, adjList [][]int, ctx *AmdCtx) []int
-
 	// Calculates the degree of node
 	Degree(node int, adjList [][]int, ctx *AmdCtx) int
 
