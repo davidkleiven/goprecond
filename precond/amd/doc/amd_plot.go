@@ -10,6 +10,7 @@ import (
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot/vg/draw"
 )
 
 const size = 100
@@ -48,11 +49,12 @@ func plotNonZero(mat mat.NonZeroDoer) *plot.Plot {
 
 	pts := make(plotter.XYs, 0)
 	mat.DoNonZero(func(i, j int, v float64) {
-		pts = append(pts, plotter.XY{X: float64(j), Y: float64(i)})
+		pts = append(pts, plotter.XY{X: float64(j), Y: -float64(i)})
 	})
 
 	scatter, err := plotter.NewScatter(pts)
 	scatter.GlyphStyle.Color = color.Gray{0}
+	scatter.GlyphStyle.Shape = draw.BoxGlyph{}
 
 	if err != nil {
 		panic(err)
@@ -65,8 +67,12 @@ func plotNonZero(mat mat.NonZeroDoer) *plot.Plot {
 func pivotDOK(orig *sparse.DOK, order []int) *sparse.DOK {
 	r, c := orig.Dims()
 	pivoted := sparse.NewDOK(r, c)
+	nodeMap := make(map[int]int)
+	for i, v := range order {
+		nodeMap[v] = i
+	}
 	orig.DoNonZero(func(i, j int, v float64) {
-		pivoted.Set(order[i], order[j], v)
+		pivoted.Set(nodeMap[i], nodeMap[j], v)
 	})
 	return pivoted
 }
@@ -76,18 +82,12 @@ func main() {
 	adjList := amd.AdjacencyList(matrix)
 	orig := plotNonZero(matrix)
 
-	// Order using simple algithm
-	simpleOrder := amd.ApproximateMinimumDegree(size, adjList, &amd.SimpleNodeDegree{})
-	simplePivoted := pivotDOK(matrix, simpleOrder)
-	simplePivotPlot := plotNonZero(simplePivoted)
-
-	// Order using method that considers new edges formed
-	formedEdgeOrder := amd.ApproximateMinimumDegree(size, adjList, amd.NewFormedEdgeDegree(adjList))
-	formedEdgePivoted := pivotDOK(matrix, formedEdgeOrder)
-	formedEdgePivotPlot := plotNonZero(formedEdgePivoted)
+	// Exact order using method that considers new edges formed
+	qGraphOrder := amd.ApproximateMinimumDegree(size, adjList, &amd.QuotientGraphExactDegreeCalculator{})
+	qGraphOrderPivoted := pivotDOK(matrix, qGraphOrder)
+	qGraphOrderPivotPlot := plotNonZero(qGraphOrderPivoted)
 
 	// Save plots
 	orig.Save(4*vg.Inch, 4*vg.Inch, "orig.svg")
-	simplePivotPlot.Save(4*vg.Inch, 4*vg.Inch, "simple.svg")
-	formedEdgePivotPlot.Save(4*vg.Inch, 4*vg.Inch, "formedEdge.svg")
+	qGraphOrderPivotPlot.Save(4*vg.Inch, 4*vg.Inch, "qGraphExact.svg")
 }
