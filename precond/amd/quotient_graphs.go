@@ -38,7 +38,7 @@ func (q *QuotientGraphExactDegreeCalculator) Degree(node int, adjList [][]int, c
 	return deg
 }
 
-func (q *QuotientGraphExactDegreeCalculator) OnNodeEliminated(eliminated Node, adjList [][]int, ctx *AmdCtx) {
+func (q *QuotientGraphExactDegreeCalculator) OnNodeEliminated(eliminated int, adjList [][]int, ctx *AmdCtx) {
 }
 
 func nextUnvisitedNeighbour(visited []bool, neighbours []int) int {

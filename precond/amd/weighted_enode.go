@@ -30,6 +30,6 @@ func (w *WeightedEnode) Degree(node int, adjList [][]int, ctx *AmdCtx) int {
 
 // OnNodeEliminated updates the weight when a node is eliminated. The weight of the eliminated node
 // is set equal to its degree prior to removal minus the weight of itself
-func (w *WeightedEnode) OnNodeEliminated(eliminated Node, adjList [][]int, ctx *AmdCtx) {
-	w.weights[eliminated.index] = w.Degree(eliminated.index, adjList, ctx) - w.weights[eliminated.index]
+func (w *WeightedEnode) OnNodeEliminated(eliminated int, adjList [][]int, ctx *AmdCtx) {
+	w.weights[eliminated] = w.Degree(eliminated, adjList, ctx) - w.weights[eliminated]
 }

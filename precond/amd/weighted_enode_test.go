@@ -42,7 +42,7 @@ func TestWeightedEnodeDegree(t *testing.T) {
 
 func TestWeightedEnodeOnUpdateNode(t *testing.T) {
 	tc := triangleCase()
-	tc.degCalc.OnNodeEliminated(Node{index: 0, degree: 2}, tc.adjList, tc.ctx)
+	tc.degCalc.OnNodeEliminated(0, tc.adjList, tc.ctx)
 	expectedWeights := []int{1, 1, 1}
 	if slices.Compare(expectedWeights, tc.degCalc.weights) != 0 {
 		t.Errorf("Wanted %v got %v\n", expectedWeights, tc.degCalc.weights)
