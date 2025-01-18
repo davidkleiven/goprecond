@@ -21,3 +21,7 @@ jobs:
 
     - name: Test
       run: go test -v ./...
+
+    - name: Check scripts run
+      run: |
+        go run precond/amd/doc/amd_plot.go
