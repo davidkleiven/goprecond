@@ -159,7 +159,7 @@ func fillInIsReduced(matrix mat.Symmetric, calcName string) bool {
 	if calcName == exact {
 		calc = &QuotientGraphExactDegreeCalculator{}
 	} else if calcName == weigthedEnode {
-		calc = NewFormedEdgeDegree(adj)
+		calc = NewWeightedEnode(r)
 	} else {
 		panic(fmt.Sprintf("Unknown calc %s", calcName))
 	}

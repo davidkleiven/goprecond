@@ -4,31 +4,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Struct to represent a node in the graph
-type Node struct {
-	degree int
-	index  int
-}
-
-// A Min-Heap of Nodes based on their degree
-type MinHeap []Node
-
-func (h MinHeap) Len() int           { return len(h) }
-func (h MinHeap) Less(i, j int) bool { return h[i].degree < h[j].degree }
-func (h MinHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *MinHeap) Push(x any) {
-	*h = append(*h, x.(Node))
-}
-
-func (h *MinHeap) Pop() any {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
 // Adjacency list returns a list where of lists where each list represents nodes where there is a non-zero
 // element in the matrix.
 func AdjacencyList(mat mat.NonZeroDoer) [][]int {
@@ -74,16 +49,16 @@ type AmdCtx struct {
 	Ordering []int
 }
 
-func (ctx *AmdCtx) MinimumActiveDegree() Node {
+func (ctx *AmdCtx) MinimumActiveDegree() int {
 	isFirst := true
 	minimumDeg := 0
-	minumNode := 0
+	minimumNode := 0
 	for i := range ctx.Degrees {
 		if !ctx.Eliminated[i] {
 			if ctx.Degrees[i] < minimumDeg || isFirst {
 				isFirst = false
 				minimumDeg = ctx.Degrees[i]
-				minumNode = i
+				minimumNode = i
 			}
 		}
 	}
@@ -91,7 +66,7 @@ func (ctx *AmdCtx) MinimumActiveDegree() Node {
 	if isFirst {
 		panic("No active elements")
 	}
-	return Node{degree: minimumDeg, index: minumNode}
+	return minimumNode
 }
 
 func NewAmdCtx(n int) AmdCtx {
@@ -107,38 +82,14 @@ type NodeDegree interface {
 	Degree(node int, adjList [][]int, ctx *AmdCtx) int
 
 	// Called when a node is eliminated
-	OnNodeEliminated(eliminated Node, adjList [][]int, ctx *AmdCtx)
+	OnNodeEliminated(eliminated int, adjList [][]int, ctx *AmdCtx)
 }
-
-// SimpleNodeDegree calculates the degree of a node by considering its
-// initial neighbours. The degree is reduced by one when one of its neighbours
-// are removed
-type SimpleNodeDegree struct{}
-
-// UpdateNodes return the neighbours of the eliminated node
-func (s *SimpleNodeDegree) UpdateNodes(eliminated Node, adjList [][]int, ctx *AmdCtx) []int {
-	return adjList[eliminated.index]
-}
-
-// Degree sets the degree equal to the number of neighbours of the node
-func (s *SimpleNodeDegree) Degree(node int, adjList [][]int, ctx *AmdCtx) int {
-	deg := 0
-	for _, n := range adjList[node] {
-		if !ctx.Eliminated[n] {
-			deg++
-		}
-	}
-	return deg
-}
-
-// OnNodeEliminated does nothing in the simplified version
-func (s *SimpleNodeDegree) OnNodeEliminated(eliminated Node, adjList [][]int, ctx *AmdCtx) {}
 
 // Function to find the minimum degree ordering
 // This currently an experimental function that is under development
 func ApproximateMinimumDegree(n int, adjList [][]int, degCalc NodeDegree) []int {
 	if degCalc == nil {
-		degCalc = &SimpleNodeDegree{}
+		degCalc = NewWeightedEnode(n)
 	}
 	ctx := NewAmdCtx(n)
 	for i := range adjList {
@@ -147,11 +98,11 @@ func ApproximateMinimumDegree(n int, adjList [][]int, degCalc NodeDegree) []int 
 
 	for i := 0; i < n; i++ {
 		node := ctx.MinimumActiveDegree()
-		ctx.Ordering = append(ctx.Ordering, node.index)
-		ctx.Eliminated[node.index] = true
+		ctx.Ordering = append(ctx.Ordering, node)
+		ctx.Eliminated[node] = true
 		degCalc.OnNodeEliminated(node, adjList, &ctx)
 
-		for _, neighbor := range adjList[node.index] {
+		for _, neighbor := range adjList[node] {
 			if ctx.Eliminated[neighbor] {
 				continue
 			}
