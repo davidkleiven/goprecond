@@ -87,3 +87,22 @@ func ExampleILUZero() {
 	// # MulVec: 1, # PreconSolve: 2
 }
 ```
+
+
+## Approximate Minimum Degree Ordering
+
+Approximate Minimum Degree ordering can be used to minimize the fill-ins in a full Cholesky decomposition.
+This library is primarily conserned with the incomplete factorizations which does not have fill-ins anyways.
+However, the incomplete decomposition is closer to the exact decomposition when the fill-ins are minimzed.
+The central part of the Approximate Minimum Degree method is how the degrees of the nodes are calcaulted.
+This library has an interface that allows users to pass different algorithms for evaluating the degree of the nodes.
+
+<p align="center">
+	<img src=./precond/amd/doc/orig.svg width=200px/>
+	<img src=./precond/amd/doc/qGraphExact.svg width=200px/>
+	<img src=./precond/amd/doc/wEnode.svg width=200px/>
+</p>
+
+The leftmost figure shows the initial matrix which is a tridiagonal matrix where the indices has been randomly shuffled.
+The center image shows the result after re-ordering according to the `QuotientGraphExactDegreeCalculator` and the right image shows the result of `WeightedEnode` degree calculator. Both the the latter calculators are capable of almost recovering the tridiagonal structure of the matrix.
+It should be noted the `QuotientGraphExactDegreeCalculator` is a quite expensive, but accurate, degree calculator and is most likely not practical for large matrices.
