@@ -1,6 +1,7 @@
 package amd
 
 import (
+	"fmt"
 	"math"
 	"slices"
 	"testing"
@@ -141,7 +142,7 @@ func (s *SymmetricNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
 	}
 }
 
-func fillInIsReduced(matrix mat.Symmetric) bool {
+func fillInIsReduced(matrix mat.Symmetric, calcName string) bool {
 	r := matrix.SymmetricDim()
 	var chol mat.Cholesky
 	if ok := chol.Factorize(matrix); !ok {
@@ -153,7 +154,16 @@ func fillInIsReduced(matrix mat.Symmetric) bool {
 	initNonZero := nnz(initialL)
 
 	adj := AdjacencyList(&SymmetricNonZeroDoer{matrix})
-	order := ApproximateMinimumDegree(r, adj, NewFormedEdgeDegree(adj))
+	var calc NodeDegree
+
+	if calcName == exact {
+		calc = &QuotientGraphExactDegreeCalculator{}
+	} else if calcName == weigthedEnode {
+		calc = NewFormedEdgeDegree(adj)
+	} else {
+		panic(fmt.Sprintf("Unknown calc %s", calcName))
+	}
+	order := ApproximateMinimumDegree(r, adj, calc)
 
 	pivot := precond.Pivot{Pivots: order}
 
@@ -176,15 +186,22 @@ func fillInIsReduced(matrix mat.Symmetric) bool {
 	return finalNonZero <= initNonZero
 }
 
+const (
+	exact         = "exact"
+	weigthedEnode = "weightedEnode"
+)
+
 func TestReducedFillIn(t *testing.T) {
 	config := quick.Config{Rand: rand.New(rand.NewSource(0))}
 
-	degreeReducedOnOrder := func(matGen property.SparseSymmetrixMatrixGenerator) bool {
-		return fillInIsReduced(matGen.Matrix)
-	}
+	for _, calc := range []string{exact, weigthedEnode} {
+		degreeReducedOnOrder := func(matGen property.SparseSymmetrixMatrixGenerator) bool {
+			return fillInIsReduced(matGen.Matrix, calc)
+		}
 
-	if err := quick.Check(degreeReducedOnOrder, &config); err != nil {
-		t.Error(err)
+		if err := quick.Check(degreeReducedOnOrder, &config); err != nil {
+			t.Error(err)
+		}
 	}
 
 }

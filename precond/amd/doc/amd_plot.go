@@ -82,12 +82,17 @@ func main() {
 	adjList := amd.AdjacencyList(matrix)
 	orig := plotNonZero(matrix)
 
-	// Exact order using method that considers new edges formed
+	// Exact order using method that uses exact the degree of nodes throughout the process
 	qGraphOrder := amd.ApproximateMinimumDegree(size, adjList, &amd.QuotientGraphExactDegreeCalculator{})
 	qGraphOrderPivoted := pivotDOK(matrix, qGraphOrder)
 	qGraphOrderPivotPlot := plotNonZero(qGraphOrderPivoted)
 
+	wEnodeOrder := amd.ApproximateMinimumDegree(size, adjList, amd.NewWeightedEnode(size))
+	wEnodeOrderPivoted := pivotDOK(matrix, wEnodeOrder)
+	wEnodeOrderPivotPlot := plotNonZero(wEnodeOrderPivoted)
+
 	// Save plots
 	orig.Save(4*vg.Inch, 4*vg.Inch, "orig.svg")
 	qGraphOrderPivotPlot.Save(4*vg.Inch, 4*vg.Inch, "qGraphExact.svg")
+	wEnodeOrderPivotPlot.Save(4*vg.Inch, 4*vg.Inch, "wEnode.svg")
 }
