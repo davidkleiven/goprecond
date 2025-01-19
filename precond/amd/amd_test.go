@@ -5,9 +5,6 @@ import (
 	"math"
 	"slices"
 	"testing"
-	"testing/quick"
-
-	"math/rand"
 
 	"github.com/davidkleiven/goprecond/precond"
 	"github.com/davidkleiven/goprecond/precond/precondtest"
@@ -63,12 +60,9 @@ type pair struct {
 }
 
 func TestAdjacencyListProperties(t *testing.T) {
-	config := quick.Config{
-		Rand: rand.New(rand.NewSource(0)),
-	}
-
-	pairsAreUnique := func(gen property.DenseSquareMatrixGenerator) bool {
-		result := AdjacencyList(&precondtest.DenseNonZeroDoer{Dense: gen.Matrix})
+	rapid.Check(t, func(t *rapid.T) {
+		matrix := property.DenseSquareMatrix(t, 2, 100)
+		result := AdjacencyList(&precondtest.DenseNonZeroDoer{Dense: matrix})
 		pairs := make(map[pair]bool)
 
 		// Pairs occur symmetrically
@@ -76,7 +70,7 @@ func TestAdjacencyListProperties(t *testing.T) {
 		for i, neighbours := range result {
 			for _, neighbour := range neighbours {
 				if i == neighbour {
-					return false
+					t.Fatalf("No node should be neighbour to itself")
 				}
 
 				pair := pair{smallest: i, largest: neighbour}
@@ -89,12 +83,10 @@ func TestAdjacencyListProperties(t *testing.T) {
 			}
 		}
 
-		return len(pairs) == numConnections/2
-	}
-
-	if err := quick.Check(pairsAreUnique, &config); err != nil {
-		t.Error(err)
-	}
+		if len(pairs) != numConnections/2 {
+			t.Fatalf("Number of pairs should be equal to the number of connection divided by 2.\nNum connections %d, num pairs %d\n", numConnections, len(pairs))
+		}
+	})
 }
 
 func TestAmdOrdering(t *testing.T) {

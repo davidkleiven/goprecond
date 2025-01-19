@@ -16,6 +16,11 @@ func AdjacencyList(mat mat.NonZeroDoer) [][]int {
 			adj[i] = make(map[int]bool)
 		}
 		adj[i][j] = true
+
+		if _, ok := adj[j]; !ok {
+			adj[j] = make(map[int]bool)
+		}
+		adj[j][i] = true
 	})
 
 	largestRow := -1
