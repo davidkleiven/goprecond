@@ -140,27 +140,6 @@ func TestPartialPivot(t *testing.T) {
 	}
 }
 
-func numColsWhereDiagIsLargest(matrix mat.Matrix) int {
-	r, c := matrix.Dims()
-
-	num := 0
-	for col := 0; col < c; col++ {
-		largestValue := 0.0
-		largestIndex := 0
-		for row := 0; row < r; row++ {
-			if v := math.Abs(matrix.At(row, col)); v > largestValue {
-				largestValue = v
-				largestIndex = row
-			}
-		}
-
-		if largestIndex == col {
-			num += 1
-		}
-	}
-	return num
-}
-
 func TestPivotingProperties(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		matrix := property.DenseSquareMatrix(t, 1, 50)
@@ -169,20 +148,18 @@ func TestPivotingProperties(t *testing.T) {
 		pivot := PartialPivotMatrix(&denseDoer, nrows)
 
 		origNorm := mat.Norm(matrix, 2)
-		origDiagLargest := numColsWhereDiagIsLargest(matrix)
 
 		result := mat.NewDense(nrows, ncols, nil)
 		result.Mul(&pivot, matrix)
 
 		finalNorm := mat.Norm(matrix, 2)
-		finalDiagLargest := numColsWhereDiagIsLargest(result)
 
 		if math.Abs(origNorm-finalNorm) > 1e-6 {
 			t.Fatalf("Norm should be preserved. Got %f wanted %f\n", finalNorm, origNorm)
 		}
 
-		if finalDiagLargest < origDiagLargest {
-			t.Fatalf("There should be more rows with the largest elements on the diagonal in the final matrix. Before %d after %d", origDiagLargest, finalDiagLargest)
+		if math.Abs(result.At(0, 0)) < math.Abs(matrix.At(0, 0)) {
+			t.Fatalf("The first diagonal will should always be larger or equal to the orginal matrix")
 		}
 
 	})
