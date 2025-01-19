@@ -11,6 +11,8 @@ require github.com/james-bowman/sparse v0.0.0-20210729090128-1e6c7dd483e9
 
 require gonum.org/v1/exp v0.0.0-20240904063054-c154cd8162a7
 
+require pgregory.net/rapid v1.1.0 // indirect
+
 require (
 	git.sr.ht/~sbinet/gg v0.6.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect

@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"gonum.org/v1/gonum/mat"
+	"pgregory.net/rapid"
 )
 
 type DenseSquareMatrixGenerator struct {
@@ -23,6 +24,12 @@ func (d DenseSquareMatrixGenerator) Generate(rand *rand.Rand, size int) reflect.
 	return reflect.ValueOf(DenseSquareMatrixGenerator{
 		Matrix: matrix,
 	})
+}
+
+func DenseSquareMatrix(t *rapid.T, minSize int, maxSize int) *mat.Dense {
+	n := rapid.IntRange(minSize, maxSize).Draw(t, "size")
+	data := rapid.SliceOfN(rapid.Float64Range(-100.0, 100.0), n*n, n*n).Draw(t, "data")
+	return mat.NewDense(n, n, data)
 }
 
 type SparseSymmetrixMatrixGenerator struct {
