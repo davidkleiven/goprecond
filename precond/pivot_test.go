@@ -2,14 +2,13 @@ package precond
 
 import (
 	"math"
-	"math/rand"
 	"slices"
 	"testing"
-	"testing/quick"
 
 	"github.com/davidkleiven/goprecond/precond/precondtest"
 	"github.com/davidkleiven/goprecond/precond/property"
 	"gonum.org/v1/gonum/mat"
+	"pgregory.net/rapid"
 )
 
 func linspaceMatrix(n, m int) *mat.Dense {
@@ -141,31 +140,50 @@ func TestPartialPivot(t *testing.T) {
 	}
 }
 
-func TestPivotingDiagonalIsDescending(t *testing.T) {
-	config := quick.Config{
-		Rand: rand.New(rand.NewSource(0)),
-	}
+func numColsWhereDiagIsLargest(matrix mat.Matrix) int {
+	r, c := matrix.Dims()
 
-	diagonalIsDesc := func(gen property.DenseSquareMatrixGenerator) bool {
-		nrows, ncols := gen.Matrix.Dims()
-		denseDoer := precondtest.DenseNonZeroDoer{gen.Matrix}
-		pivot := PartialPivotMatrix(&denseDoer, nrows)
-
-		// Apply pivot and confirm that diagonal is descending in absolute value
-		result := mat.NewDense(nrows, ncols, nil)
-		result.Mul(&pivot, gen.Matrix)
-		for i := 0; i < nrows-1; i++ {
-			diag := math.Abs(result.At(i, i))
-			for j := i + 1; j < nrows; j++ {
-				if v := math.Abs(result.At(j, i)); v > diag {
-					return false
-				}
+	num := 0
+	for col := 0; col < c; col++ {
+		largestValue := 0.0
+		largestIndex := 0
+		for row := 0; row < r; row++ {
+			if v := math.Abs(matrix.At(row, col)); v > largestValue {
+				largestValue = v
+				largestIndex = row
 			}
 		}
-		return true
-	}
 
-	if err := quick.Check(diagonalIsDesc, &config); err != nil {
-		t.Error(err)
+		if largestIndex == col {
+			num += 1
+		}
 	}
+	return num
+}
+
+func TestPivotingProperties(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		matrix := property.DenseSquareMatrix(t, 1, 50)
+		nrows, ncols := matrix.Dims()
+		denseDoer := precondtest.DenseNonZeroDoer{matrix}
+		pivot := PartialPivotMatrix(&denseDoer, nrows)
+
+		origNorm := mat.Norm(matrix, 2)
+		origDiagLargest := numColsWhereDiagIsLargest(matrix)
+
+		result := mat.NewDense(nrows, ncols, nil)
+		result.Mul(&pivot, matrix)
+
+		finalNorm := mat.Norm(matrix, 2)
+		finalDiagLargest := numColsWhereDiagIsLargest(result)
+
+		if math.Abs(origNorm-finalNorm) > 1e-6 {
+			t.Fatalf("Norm should be preserved. Got %f wanted %f\n", finalNorm, origNorm)
+		}
+
+		if finalDiagLargest < origDiagLargest {
+			t.Fatalf("There should be more rows with the largest elements on the diagonal in the final matrix. Before %d after %d", origDiagLargest, finalDiagLargest)
+		}
+
+	})
 }
