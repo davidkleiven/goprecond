@@ -13,6 +13,7 @@ import (
 	"github.com/davidkleiven/goprecond/precond/precondtest"
 	"github.com/davidkleiven/goprecond/precond/property"
 	"gonum.org/v1/gonum/mat"
+	"pgregory.net/rapid"
 )
 
 func TestAdjacencyList(t *testing.T) {
@@ -142,7 +143,7 @@ func (s *SymmetricNonZeroDoer) DoNonZero(fn func(i, j int, v float64)) {
 	}
 }
 
-func fillInIsReduced(matrix mat.Symmetric, calcName string) bool {
+func fillInIsReduced(t *rapid.T, matrix mat.Symmetric, calcName string) {
 	r := matrix.SymmetricDim()
 	var chol mat.Cholesky
 	if ok := chol.Factorize(matrix); !ok {
@@ -183,7 +184,9 @@ func fillInIsReduced(matrix mat.Symmetric, calcName string) bool {
 	var finalL mat.TriDense
 	chol.LTo(&finalL)
 	finalNonZero := nnz(&finalL)
-	return finalNonZero <= initNonZero
+	if finalNonZero > initNonZero {
+		t.Fatalf("Fill-in should be reduced when applying AMD. nnz before: %d nnz after %d\n", initNonZero, finalNonZero)
+	}
 }
 
 const (
@@ -192,16 +195,10 @@ const (
 )
 
 func TestReducedFillIn(t *testing.T) {
-	config := quick.Config{Rand: rand.New(rand.NewSource(0))}
-
-	for _, calc := range []string{exact, weigthedEnode} {
-		degreeReducedOnOrder := func(matGen property.SparseSymmetrixMatrixGenerator) bool {
-			return fillInIsReduced(matGen.Matrix, calc)
-		}
-
-		if err := quick.Check(degreeReducedOnOrder, &config); err != nil {
-			t.Error(err)
-		}
-	}
-
+	calcName := []string{exact, weigthedEnode}
+	rapid.Check(t, func(t *rapid.T) {
+		calcName := calcName[rapid.IntRange(0, 1).Draw(t, "calc-name-decisor")]
+		matrix := property.SparseSymmetricMatrix(t, 10, 50)
+		fillInIsReduced(t, matrix, calcName)
+	})
 }
