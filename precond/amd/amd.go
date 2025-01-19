@@ -43,6 +43,21 @@ func AdjacencyList(mat mat.NonZeroDoer) [][]int {
 	return result
 }
 
+func isAdjacencyList(adjList [][]int) bool {
+	maxNodeNum := 0
+	for _, neighbours := range adjList {
+		if len(neighbours) == 0 {
+			return false
+		}
+		for _, neighbour := range neighbours {
+			if neighbour > maxNodeNum {
+				maxNodeNum = neighbour
+			}
+		}
+	}
+	return maxNodeNum == len(adjList)-1
+}
+
 type AmdCtx struct {
 	// Degree of all nodes
 	Degrees []int
@@ -91,8 +106,22 @@ type NodeDegree interface {
 }
 
 // Function to find the minimum degree ordering
-// This currently an experimental function that is under development
-func ApproximateMinimumDegree(n int, adjList [][]int, degCalc NodeDegree) []int {
+// It takes an adjecancy list that describes the neighbours of each node
+// e.g. [][]int{{1}, {0, 2}, {1}} describes the a graph where node 0
+// is neighbour to node 1. Node one is neighbour to 0 and 2 and node
+// 2 is neighbour to 1: 0 ---- 1 ---- 2
+//
+// degCalc implements the details of how the degree of each node is calculated
+// if nil, the WeightedEnode is used
+//
+// The method panics if the adjList is invalid. The adjacancy list is invalid
+// if either some node have zero neighbours or some nodes does not have a
+// neighbour list
+func ApproximateMinimumDegree(adjList [][]int, degCalc NodeDegree) []int {
+	if !isAdjacencyList(adjList) {
+		panic("The provided adjecancy list appears to not be an adjacency list. All nodes must have a neighbour list")
+	}
+	n := len(adjList)
 	if degCalc == nil {
 		degCalc = NewWeightedEnode(n)
 	}

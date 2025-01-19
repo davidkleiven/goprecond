@@ -26,12 +26,12 @@ func TestAdjacencyList(t *testing.T) {
 		},
 		{
 			mat:  mat.NewDense(2, 2, []float64{0.0, 1.0, 0.0, 1.0}),
-			want: [][]int{{1}},
+			want: [][]int{{1}, {0}},
 			desc: "One connecttion between 0, 1",
 		},
 		{
 			mat:  mat.NewDense(2, 2, []float64{1.0, 0.0, 1.0, 1.0}),
-			want: [][]int{{}, {0}},
+			want: [][]int{{1}, {0}},
 			desc: "One connecttion between 0, 1, but only from the last row",
 		},
 		{
@@ -98,7 +98,7 @@ func TestAmdOrdering(t *testing.T) {
 	})
 
 	adjList := AdjacencyList(&precondtest.DenseNonZeroDoer{Dense: matrix})
-	order := ApproximateMinimumDegree(4, adjList, nil)
+	order := ApproximateMinimumDegree(adjList, nil)
 	want := []int{1, 2, 0, 3}
 
 	if !slices.Equal(want, order) {
@@ -156,7 +156,7 @@ func fillInIsReduced(t *rapid.T, matrix mat.Symmetric, calcName string) {
 	} else {
 		panic(fmt.Sprintf("Unknown calc %s", calcName))
 	}
-	order := ApproximateMinimumDegree(r, adj, calc)
+	order := ApproximateMinimumDegree(adj, calc)
 
 	pivot := precond.Pivot{Pivots: order}
 
@@ -193,4 +193,32 @@ func TestReducedFillIn(t *testing.T) {
 		matrix := property.SparseSymmetricMatrix(t, 10, 50)
 		fillInIsReduced(t, matrix, calcName)
 	})
+}
+
+func TestIsAdjecancyList(t *testing.T) {
+	for _, test := range []struct {
+		adjList [][]int
+		want    bool
+		desc    string
+	}{
+		{
+			adjList: [][]int{{0}, {1}},
+			want:    true,
+			desc:    "One edge between node 0 and 1",
+		},
+		{
+			adjList: [][]int{{0}, {2}},
+			want:    false,
+			desc:    "Node 2 does not appear in the list",
+		},
+		{
+			adjList: [][]int{{0}, {}},
+			want:    false,
+			desc:    "Node 1 has no neighbours",
+		},
+	} {
+		if v := isAdjacencyList(test.adjList); v != test.want {
+			t.Errorf("Test %s: got %v wanted %v\n", test.desc, v, test.want)
+		}
+	}
 }
