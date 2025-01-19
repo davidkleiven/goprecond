@@ -83,11 +83,11 @@ func main() {
 	orig := plotNonZero(matrix)
 
 	// Exact order using method that uses exact the degree of nodes throughout the process
-	qGraphOrder := amd.ApproximateMinimumDegree(size, adjList, &amd.QuotientGraphExactDegreeCalculator{})
+	qGraphOrder := amd.ApproximateMinimumDegree(adjList, &amd.QuotientGraphExactDegreeCalculator{})
 	qGraphOrderPivoted := pivotDOK(matrix, qGraphOrder)
 	qGraphOrderPivotPlot := plotNonZero(qGraphOrderPivoted)
 
-	wEnodeOrder := amd.ApproximateMinimumDegree(size, adjList, amd.NewWeightedEnode(size))
+	wEnodeOrder := amd.ApproximateMinimumDegree(adjList, amd.NewWeightedEnode(size))
 	wEnodeOrderPivoted := pivotDOK(matrix, wEnodeOrder)
 	wEnodeOrderPivotPlot := plotNonZero(wEnodeOrderPivoted)
 

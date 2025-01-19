@@ -93,7 +93,7 @@ func TestOrderChain(t *testing.T) {
 	}
 
 	quotientGraphCalc := QuotientGraphExactDegreeCalculator{}
-	pivot := ApproximateMinimumDegree(n, adjList, &quotientGraphCalc)
+	pivot := ApproximateMinimumDegree(adjList, &quotientGraphCalc)
 
 	pivotedNodes := make([]int, n)
 	for i, v := range pivot {
