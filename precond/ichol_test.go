@@ -1,6 +1,7 @@
 package precond
 
 import (
+	"fmt"
 	"math"
 
 	"testing"
@@ -23,27 +24,29 @@ func TestICholSolution(t *testing.T) {
 	t.Parallel()
 
 	for testNum, n := range []int{5, 10, 15, 20} {
-		c := randomSymmetricTestCase(n)
-		ichol := IChol(&precondtest.DenseNonZeroDoer{Dense: c.matrix})
-		icholResultvec := mat.NewVecDense(n, nil)
-		ichoTResultVec := mat.NewVecDense(n, nil)
-		dotProduct := mat.NewVecDense(n, nil)
-		ichol.SolveVecTo(ichoTResultVec, false, c.rhs)
-		ichol.SolveVecTo(ichoTResultVec, false, c.rhs)
-		dotProduct.MulVec(c.matrix, icholResultvec)
+		t.Run(fmt.Sprintf("%d", n), func(t *testing.T) {
+			c := randomSymmetricTestCase(n)
+			ichol := IChol(&precondtest.DenseNonZeroDoer{Dense: c.matrix})
+			icholResultvec := mat.NewVecDense(n, nil)
+			ichoTResultVec := mat.NewVecDense(n, nil)
+			dotProduct := mat.NewVecDense(n, nil)
+			ichol.SolveVecTo(ichoTResultVec, false, c.rhs)
+			ichol.SolveVecTo(ichoTResultVec, false, c.rhs)
+			dotProduct.MulVec(c.matrix, icholResultvec)
 
-		tol := 1e-6
-		for i := 0; i < n; i++ {
-			if math.Abs(ichoTResultVec.AtVec(i)-icholResultvec.AtVec(i)) > tol {
-				t.Errorf("Test #%d: transposed result\n%v\nuntransposed result\n%v\n", testNum, icholResultvec, ichoTResultVec)
-				return
+			tol := 1e-6
+			for i := 0; i < n; i++ {
+				if math.Abs(ichoTResultVec.AtVec(i)-icholResultvec.AtVec(i)) > tol {
+					t.Errorf("Test #%d: transposed result\n%v\nuntransposed result\n%v\n", testNum, icholResultvec, ichoTResultVec)
+					return
+				}
+
+				if math.Abs(icholResultvec.AtVec(i)-dotProduct.AtVec(i)) > tol {
+					t.Errorf("Test #%d: wanted\n%v\ngot\n%v\n", testNum, c.rhs, dotProduct)
+					return
+				}
 			}
 
-			if math.Abs(icholResultvec.AtVec(i)-dotProduct.AtVec(i)) > tol {
-				t.Errorf("Test #%d: wanted\n%v\ngot\n%v\n", testNum, c.rhs, dotProduct)
-				return
-			}
-		}
-
+		})
 	}
 }
