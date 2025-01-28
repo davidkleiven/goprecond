@@ -1,6 +1,7 @@
 package precond
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -95,34 +96,35 @@ func randomTestCase(dim int) testCase {
 
 func TestSelfConsistency(t *testing.T) {
 	t.Parallel()
-
 	for _, trans := range []bool{true, false} {
 		for _, dim := range []int{5, 10, 15, 20, 25} {
-			tc := randomTestCase(dim)
-			zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
-			zeroAware.CloneFrom(tc.matrix)
+			t.Run(fmt.Sprintf("trans %v dim %d", trans, dim), func(t *testing.T) {
+				tc := randomTestCase(dim)
+				zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
+				zeroAware.CloneFrom(tc.matrix)
 
-			splu := ILUZero(zeroAware)
-			result := mat.NewVecDense(dim, nil)
-			if err := splu.SolveVecTo(result, trans, tc.rhs); err != nil {
-				t.Errorf("%v\n", err)
-				return
-			}
-
-			want := mat.NewVecDense(dim, nil)
-			if trans {
-				want.MulVec(tc.matrix.T(), result)
-			} else {
-				want.MulVec(tc.matrix, result)
-			}
-
-			tol := 1e-6
-			for i := 0; i < dim; i++ {
-				if diff := math.Abs(want.AtVec(i) - tc.rhs.AtVec(i)); diff > tol {
-					t.Errorf("Dim: %d, trans: %v, Wanted:\n%v\ngot\n%v\n", dim, trans, want, result)
+				splu := ILUZero(zeroAware)
+				result := mat.NewVecDense(dim, nil)
+				if err := splu.SolveVecTo(result, trans, tc.rhs); err != nil {
+					t.Errorf("%v\n", err)
 					return
 				}
-			}
+
+				want := mat.NewVecDense(dim, nil)
+				if trans {
+					want.MulVec(tc.matrix.T(), result)
+				} else {
+					want.MulVec(tc.matrix, result)
+				}
+
+				tol := 1e-6
+				for i := 0; i < dim; i++ {
+					if diff := math.Abs(want.AtVec(i) - tc.rhs.AtVec(i)); diff > tol {
+						t.Errorf("Dim: %d, trans: %v, Wanted:\n%v\ngot\n%v\n", dim, trans, want, result)
+						return
+					}
+				}
+			})
 
 		}
 	}
@@ -132,35 +134,37 @@ func TestRandomMatricesAgainstGonum(t *testing.T) {
 	t.Parallel()
 
 	for _, dim := range []int{5, 10, 15, 20} {
-		tc := randomTestCase(dim)
+		t.Run(fmt.Sprintf("%d", dim), func(t *testing.T) {
+			tc := randomTestCase(dim)
 
-		zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
-		zeroAware.CloneFrom(tc.matrix)
+			zeroAware := &precondtest.DenseNonZeroDoer{Dense: mat.NewDense(dim, dim, nil)}
+			zeroAware.CloneFrom(tc.matrix)
 
-		var lu mat.LU
-		lu.Factorize(tc.matrix)
+			var lu mat.LU
+			lu.Factorize(tc.matrix)
 
-		resultGonum := mat.NewVecDense(dim, nil)
-		result := mat.NewVecDense(dim, nil)
+			resultGonum := mat.NewVecDense(dim, nil)
+			result := mat.NewVecDense(dim, nil)
 
-		if err := lu.SolveVecTo(resultGonum, false, tc.rhs); err != nil {
-			t.Errorf("%v\n", err)
-			return
-		}
-
-		splu := ILUZero(zeroAware)
-		if err := splu.SolveVecTo(result, false, tc.rhs); err != nil {
-			t.Errorf("%v\n", err)
-			return
-		}
-
-		tol := 1e-6
-		for i := 0; i < dim; i++ {
-			if diff := math.Abs(resultGonum.AtVec(i) - result.AtVec(i)); diff > tol {
-				t.Errorf("Too large difference (%f)\nGonum: %v\nUs: %v", diff, resultGonum, result)
+			if err := lu.SolveVecTo(resultGonum, false, tc.rhs); err != nil {
+				t.Errorf("%v\n", err)
 				return
 			}
-		}
+
+			splu := ILUZero(zeroAware)
+			if err := splu.SolveVecTo(result, false, tc.rhs); err != nil {
+				t.Errorf("%v\n", err)
+				return
+			}
+
+			tol := 1e-6
+			for i := 0; i < dim; i++ {
+				if diff := math.Abs(resultGonum.AtVec(i) - result.AtVec(i)); diff > tol {
+					t.Errorf("Too large difference (%f)\nGonum: %v\nUs: %v", diff, resultGonum, result)
+					return
+				}
+			}
+		})
 
 	}
 }

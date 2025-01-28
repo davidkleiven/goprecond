@@ -1,6 +1,7 @@
 package precond
 
 import (
+	"fmt"
 	"math"
 	"slices"
 	"testing"
@@ -92,20 +93,22 @@ func TestPivoting(t *testing.T) {
 			colSwap: true,
 		},
 	} {
-		n, m := test.matrix.Dims()
-		pivot := Pivot{test.pivot}
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			n, m := test.matrix.Dims()
+			pivot := Pivot{test.pivot}
 
-		result := mat.NewDense(n, m, nil)
+			result := mat.NewDense(n, m, nil)
 
-		if test.colSwap {
-			result.Mul(test.matrix, pivot.T())
-		} else {
-			result.Mul(&pivot, test.matrix)
-		}
+			if test.colSwap {
+				result.Mul(test.matrix, pivot.T())
+			} else {
+				result.Mul(&pivot, test.matrix)
+			}
 
-		if !equal(result, test.want, 1e-6) {
-			t.Errorf("test #%d: wanted\n%v\ngot\n%v\n", i, test.want, result)
-		}
+			if !equal(result, test.want, 1e-6) {
+				t.Errorf("test #%d: wanted\n%v\ngot\n%v\n", i, test.want, result)
+			}
+		})
 	}
 }
 
@@ -131,12 +134,14 @@ func TestPartialPivot(t *testing.T) {
 			desc:   "Simple 2x2 matrix with negative numbers",
 		},
 	} {
-		nrows, _ := test.matrix.Dims()
-		pivot := PartialPivotMatrix(&test.matrix, nrows)
+		t.Run(test.desc, func(t *testing.T) {
+			nrows, _ := test.matrix.Dims()
+			pivot := PartialPivotMatrix(&test.matrix, nrows)
 
-		if slices.Compare(pivot.Pivots, test.want) != 0 {
-			t.Errorf("Wanted\n%v\ngot%v\n", test.want, pivot.Pivots)
-		}
+			if slices.Compare(pivot.Pivots, test.want) != 0 {
+				t.Errorf("Wanted\n%v\ngot%v\n", test.want, pivot.Pivots)
+			}
+		})
 	}
 }
 
